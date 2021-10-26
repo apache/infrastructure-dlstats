@@ -42,7 +42,7 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
         q = elasticsearch_dsl.Search(using=es_client)
         q = q.filter("range", **{field_names['timestamp']: {"gte": f"now-{duration}"}})
         q = q.filter("match", **{field_names['uri']: project})
-        q = q.filter("regexp", **{field_names['uri'] + ".keyword": r".*\.[a-z]+"})
+        q = q.filter("regexp", **{field_names['uri'] + ".keyword": r".*\.[a-z0-9]+"})
         q = q.filter("match", **{field_names['vhost']: field_names['_vhost_']})
 
         q.aggs.bucket("request_per_url", elasticsearch_dsl.A("terms", field=f"{field_names['uri']}.keyword", size=MAX_HITS))
