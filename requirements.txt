@@ -1,0 +1,3 @@
+ahapi
+elasticsearch==7.13.0
+elasticsearch_dsl==7.3.0
