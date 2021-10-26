@@ -7,7 +7,7 @@ httpserver = ahapi.simple(
     api_dir="/opt/dlstats/scripts",    # serve api end points from here
     static_dir="/opt/dlstats/htdocs",  # serve stuff like html and images from here
     bind_ip="127.0.0.1",
-    bind_port=8080,
+    bind_port=8082,
     state={"something": "stateful"}
 )
 
