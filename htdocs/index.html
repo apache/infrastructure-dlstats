@@ -256,7 +256,7 @@
         document.getElementById('spinner').style.display = "block";
         let project = document.getElementById('project').value;
         let duration = document.getElementById('duration').value;
-        fetch(`/stats?project=${project}&duration=${duration}`)
+        fetch(`stats?project=${project}&duration=${duration}`)
             .then(response => response.json())
             .then(data=> {
                 compile_chart(data);
