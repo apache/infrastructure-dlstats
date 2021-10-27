@@ -27,7 +27,7 @@ FIELD_NAMES = {
 }
 
 
-es_client = elasticsearch.AsyncElasticsearch(hosts=["http://localhost:9200/"], async_timeout="5m")
+es_client = elasticsearch.AsyncElasticsearch(hosts=["http://localhos:9200/"], timeout=45)
 
 
 async def process(state: typing.Any, request, formdata: dict) -> dict:
@@ -35,6 +35,7 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
     project = formdata.get("project", "netbeans")
 
     downloads_by_requests = {}
+    downloads_by_requests_unique = {}
     downloads_by_traffic = {}
     downloads_by_country = {}
 
@@ -45,8 +46,13 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
         q = q.filter("regexp", **{field_names['uri'] + ".keyword": r".*\.[a-z0-9]+"})
         q = q.filter("match", **{field_names['vhost']: field_names['_vhost_']})
 
-        q.aggs.bucket("request_per_url", elasticsearch_dsl.A("terms", field=f"{field_names['uri']}.keyword", size=MAX_HITS))
-        q.aggs.bucket("request_per_country", elasticsearch_dsl.A("terms", field=f"{field_names['geo_country']}.keyword", size=MAX_HITS))
+        q.aggs.bucket("request_per_url", elasticsearch_dsl.A("terms", field=f"{field_names['uri']}.keyword", size=MAX_HITS)) \
+            .metric('unique_ips', 'cardinality', field='client_ip.keyword') \
+            .pipeline('product_by_unique', 'bucket_sort', sort=[{'unique_ips': 'desc'}])
+        q.aggs.bucket('by_country', 'terms', field=f"{field_names['geo_country']}.keyword", size=MAX_HITS) \
+            .metric('unique_ips', 'cardinality', field='client_ip.keyword') \
+            .pipeline('product_by_unique', 'bucket_sort', sort=[{'unique_ips': 'desc'}])
+
         q.aggs.bucket(
             "requests_by_traffic",
             elasticsearch_dsl.A("terms", field=f"{field_names['uri']}.keyword", size=MAX_HITS, order={"bytes_sum": "desc"}),
@@ -66,16 +72,19 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
             url = re.sub("^/?" + project + "/", "", url, count=100)
             if '.' in url and not url.endswith('/'):
                 visits = int(entry["doc_count"])
+                visits_unique = int(entry["unique_ips"]["value"])
                 downloads_by_requests[url] = downloads_by_requests.get(url, 0) + visits
-        for entry in resp["aggregations"]["request_per_country"]["buckets"]:
+                downloads_by_requests_unique[url] = downloads_by_requests_unique.get(url, 0) + visits_unique
+        for entry in resp["aggregations"]["by_country"]["buckets"]:
             cca2 = entry["key"]
             if 'cca2' and cca2 != '-':
-                visits = int(entry["doc_count"])
+                visits = int(entry["unique_ips"]["value"])
                 downloads_by_country[cca2] = downloads_by_country.get(cca2, 0) + visits
 
     return {
         "timespan": duration,
         "by_requests": downloads_by_requests,
+        "by_requests_unique": downloads_by_requests_unique,
         "by_bytes": downloads_by_traffic,
         "by_country": downloads_by_country,
     }
