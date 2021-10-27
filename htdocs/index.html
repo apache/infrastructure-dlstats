@@ -106,7 +106,7 @@
     <h2>Most downloaded files</h2>
     <table id="table_requests_main">
         <thead>
-        <tr><th>Filename:</th><th>Downloads:</tr>
+        <tr><th>Filename:</th><th>Downloads (unique):</tr>
         </thead>
         <tbody id="table_requests"></tbody>
     </table>
@@ -212,12 +212,13 @@
         let files_sorted = Object.keys(js.by_requests).sort((a,b) => js.by_requests[b]-js.by_requests[a]);
         for (let k of files_sorted) {
             let value = js.by_requests[k];
+            let value_unique = js.by_requests_unique[k];
             let tr = document.createElement('tr');
             let td1 = document.createElement('td');
             let td2 = document.createElement('td');
             td1.innerText = k;
             td1.style.textAlign = 'left';
-            td2.innerText = value.pretty();
+            td2.innerText = `${value.pretty()} (${value_unique.pretty()})`;
             td2.style.textAlign = 'right';
             tr.appendChild(td1);
             tr.appendChild(td2);
