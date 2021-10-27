@@ -27,7 +27,7 @@ FIELD_NAMES = {
 }
 
 
-es_client = elasticsearch.AsyncElasticsearch(hosts=["http://localhos:9200/"], timeout=45)
+es_client = elasticsearch.AsyncElasticsearch(hosts=["http://localhost:9200/"], timeout=45)
 
 
 async def process(state: typing.Any, request, formdata: dict) -> dict:
