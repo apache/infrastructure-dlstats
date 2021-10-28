@@ -15,6 +15,7 @@ FIELD_NAMES = {
         "uri": "url",
         "timestamp": "timestamp",
         "_vhost_": "dlcdn.apache.org",
+        "request_method": "request",
     },
     "loggy": {
         "geo_country": "geo_country",
@@ -23,6 +24,7 @@ FIELD_NAMES = {
         "uri": "uri",
         "timestamp": "@timestamp",
         "_vhost_": "downloads.apache.org",
+        "request_method": "request_method",
     }
 }
 
@@ -42,6 +44,8 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
     for provider, field_names in FIELD_NAMES.items():
         q = elasticsearch_dsl.Search(using=es_client)
         q = q.filter("range", **{field_names['timestamp']: {"gte": f"now-{duration}"}})
+        q = q.filter("term", **{field_names['request_method']: "GET"})
+        q = q.filter("range", bytes={"gt": 0})
         q = q.filter("match", **{field_names['uri']: project})
         q = q.filter("regexp", **{field_names['uri'] + ".keyword": r".*\.[a-z0-9]+"})
         q = q.filter("match", **{field_names['vhost']: field_names['_vhost_']})
