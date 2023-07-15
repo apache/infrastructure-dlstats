@@ -63,6 +63,8 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
         ).metric("bytes_sum", "sum", field=field_names['bytes'])
 
         resp = await es_client.search(index=f"{provider}-*", body=q.to_dict(), size=0, timeout="60s")
+        if "aggregations" not in resp:  # Skip this provider if no data is available
+            continue
 
         for entry in resp["aggregations"]["requests_by_traffic"]["buckets"]:
             if "bytes_sum" in entry:
